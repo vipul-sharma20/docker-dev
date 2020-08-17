@@ -32,3 +32,5 @@ RUN touch /root/vimrc/vimrc.d/work.vim
 WORKDIR /home/
 
 RUN curl -sL install-node.now.sh/lts | bash -s -- --yes
+
+RUN /home/nvim-linux64/bin/nvim -s ~/vimrc/vimrc +PlugInstall +qall
