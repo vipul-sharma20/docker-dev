@@ -1,36 +1,32 @@
-FROM ubuntu:16.04
+FROM ubuntu:21.04
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update
-RUN apt-get install -y curl wget unzip git nodejs npm tmux libffi-dev zsh silversearcher-ag
+
+RUN apt-get install -y curl wget unzip git zsh gcc fzf ripgrep build-essential
 
 WORKDIR /home/
 
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-RUN wget https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
+# RUN wget https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
+RUN wget https://github.com/neovim/neovim/releases/download/v0.6.1/nvim-linux64.tar.gz
+
 RUN tar -xvzf nvim-linux64.tar.gz && rm nvim-linux64.tar.gz
 RUN echo 'alias vi=/home/nvim-linux64/bin/nvim' >> ~/.zshrc
 
-RUN git clone --depth 1 https://github.com/junegunn/fzf.git /home/.fzf
-RUN /home/.fzf/install --all
+RUN apt install -y python3.10 python3-pip
 
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository -y ppa:deadsnakes/ppa
-RUN apt-get -y update
-RUN apt-get -y install python3.8 python3-pip
-RUN pip3 install neovim
+RUN git clone https://github.com/vipul-sharma20/nvim-config ~/.config/nvim
+RUN git clone --depth 1 https://github.com/wbthomason/packer.nvim \
+ ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 
-RUN curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+# TODO: Also setup Treesitter plugins during build time instead of setting up
+# during runtime as it'll require internet
+RUN /home/nvim-linux64/bin/nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
 
-RUN git clone https://github.com/vipul-sharma20/vimrc
-RUN mkdir -p ~/.config/nvim/
-RUN cp vimrc/init.vim ~/.config/nvim/
-RUN cp -r vimrc/ /root/
-RUN touch /root/vimrc/vimrc.d/work.vim
+# TODO: Add other LSP stuff here
+RUN pip3 install python-lsp-server
 
-WORKDIR /home/
+CMD ["/home/nvim-linux64/bin/nvim"]
 
-RUN curl -sL install-node.now.sh/lts | bash -s -- --yes
-
-RUN /home/nvim-linux64/bin/nvim -s ~/vimrc/vimrc +PlugInstall +qall
